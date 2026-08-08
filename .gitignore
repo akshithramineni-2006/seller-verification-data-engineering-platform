@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Power BI
+*.pbix
+
+# Generated data
+data/raw/
+data/bronze/
+data/silver/
+data/gold/
+
+# Dashboard exports
+dashboard/exports/
+
+# Test scripts
+app/test_clean.py
