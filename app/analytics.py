@@ -224,39 +224,39 @@ if __name__ == "__main__":
     """
 )
    
-run_query(
-    "Verification Status",
-    "verification_status.csv",
-    """
-    SELECT
-        dv.verification_status,
-        COUNT(*) AS seller_count
-    FROM fact_seller f
-    JOIN dim_verification dv
-        ON f.verification_key = dv.verification_key
-    GROUP BY dv.verification_status
-    ORDER BY seller_count DESC;
-    """
-)
-    
-run_query(
-    "Country Verification Summary",
-    "country_verification.csv",
-    """
-    SELECT
-        dc.country_name,
-        dv.verification_status,
-        COUNT(*) AS seller_count
-    FROM fact_seller f
-    JOIN dim_country dc
-        ON f.country_key = dc.country_key
-    JOIN dim_verification dv
-        ON f.verification_key = dv.verification_key
-    GROUP BY
-        dc.country_name,
-        dv.verification_status
-    ORDER BY
-        dc.country_name,
-        seller_count DESC;
-    """
-)
+    run_query(
+        "Verification Status",
+        "verification_status.csv",
+        """
+        SELECT
+            dv.verification_status,
+            COUNT(*) AS seller_count
+        FROM fact_seller f
+        JOIN dim_verification dv
+            ON f.verification_key = dv.verification_key
+        GROUP BY dv.verification_status
+        ORDER BY seller_count DESC;
+        """
+    )
+
+    run_query(
+        "Country Verification Summary",
+        "country_verification.csv",
+        """
+        SELECT
+            dc.country_name,
+            dv.verification_status,
+            COUNT(*) AS seller_count
+        FROM fact_seller f
+        JOIN dim_country dc
+            ON f.country_key = dc.country_key
+        JOIN dim_verification dv
+            ON f.verification_key = dv.verification_key
+        GROUP BY
+            dc.country_name,
+            dv.verification_status
+        ORDER BY
+            dc.country_name,
+            seller_count DESC;
+        """
+    )
