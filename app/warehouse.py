@@ -238,7 +238,7 @@ def build_risk_dimension():
     
 def build_fact_table():
 
-    with open("sql/fact_load.sql", "r") as f:
+    with open("sql/facts.sql", "r") as f:
 
         con.execute(f.read())
 
