@@ -45,30 +45,11 @@ The project was designed to demonstrate practical Data Engineering concepts incl
 
 ## Project Architecture
 
-```text
-                 Synthetic Data Generation
-                           │
-                           ▼
-                    Raw CSV Files
-                           │
-                           ▼
-                  Bronze Layer (Raw)
-                           │
-                           ▼
-              Silver Layer (Cleaned Data)
-                           │
-                           ▼
-            DuckDB Data Warehouse (Gold)
-                           │
-                           ▼
-                 SQL Analytics Layer
-                           │
-                           ▼
-                  Power BI Dashboard
-```
+## Project Architecture
 
----
+![Seller Verification Pipeline](docs/seller_verification_pipeline.drawio.svg)
 
+The pipeline follows a Bronze–Silver–Gold architecture, transforming raw seller data into validated warehouse tables and Power BI-ready analytical datasets.
 ## Folder Structure
 
 ```text
