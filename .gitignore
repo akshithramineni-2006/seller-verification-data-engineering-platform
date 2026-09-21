@@ -16,14 +16,21 @@ logs/
 # Power BI
 *.pbix
 
-# Generated data
-data/raw/
-data/bronze/
-data/silver/
-data/gold/
+# Track project data layers
+!data/
+!data/raw/
+!data/raw/**
+!data/bronze/
+!data/bronze/**
+!data/silver/
+!data/silver/**
+!data/gold/
+!data/gold/**
 
-# Dashboard exports
-dashboard/exports/
+# Track analyzed datasets
+!dashboard/
+!dashboard/exports/
+!dashboard/exports/**
 
 # Test scripts
 app/test_clean.py
