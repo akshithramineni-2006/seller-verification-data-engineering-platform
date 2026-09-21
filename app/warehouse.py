@@ -46,6 +46,22 @@ def create_schema():
 
     logger.info("Schema created.")
 
+def load_dimensions_from_sql():
+
+    with open("sql/dimensions.sql", "r") as f:
+        sql_script = f.read()
+
+    statements = [
+        statement.strip()
+        for statement in sql_script.split(";")
+        if statement.strip()
+    ]
+
+    for statement in statements:
+        con.execute(statement)
+
+    logger.info("All dimension tables loaded from SQL.")
+
 def build_country_dimension():
 
     con.execute("""
@@ -264,15 +280,7 @@ if __name__ == "__main__":
 
     load_data()
 
-    build_country_dimension()
-
-    build_business_dimension()
-
-    build_date_dimension()
-
-    build_verification_dimension()
-
-    build_risk_dimension()
+    load_dimensions_from_sql()
 
     build_fact_table()
 
