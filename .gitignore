@@ -27,3 +27,7 @@ dashboard/exports/
 
 # Test scripts
 app/test_clean.py
+# Track Gold warehouse database
+!data/gold/
+data/gold/*
+!data/gold/warehouse.duckdb
