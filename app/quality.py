@@ -1,72 +1,68 @@
-import pandas as pd
+
 from pathlib import Path
+
+import duckdb
+import pandas as pd
 
 from app.config import SILVER_DATA
 
-EXPORT_DIR = Path("dashboard") / "exports"
+DATABASE = Path("data/gold/warehouse.duckdb")
+SQL_FILE = Path("sql/validation.sql")
+EXPORT_DIR = Path("dashboard/exports")
+
 EXPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def generate_quality_report():
+    con = duckdb.connect(str(DATABASE), read_only=False)
 
-    sellers = pd.read_parquet(
-        SILVER_DATA / "sellers.parquet"
-    )
+    try:
+        # Register Silver Parquet files as temporary DuckDB views.
+        con.execute(
+            "CREATE OR REPLACE VIEW sellers AS "
+            f"SELECT * FROM read_parquet('{(SILVER_DATA / 'sellers.parquet').as_posix()}')"
+        )
 
-    verification = pd.read_parquet(
-        SILVER_DATA / "verification.parquet"
-    )
+        con.execute(
+            "CREATE OR REPLACE VIEW verification AS "
+            f"SELECT * FROM read_parquet('{(SILVER_DATA / 'verification.parquet').as_posix()}')"
+        )
 
-    transactions = pd.read_parquet(
-        SILVER_DATA / "transactions.parquet"
-    )
+        con.execute(
+            "CREATE OR REPLACE VIEW transactions AS "
+            f"SELECT * FROM read_parquet('{(SILVER_DATA / 'transactions.parquet').as_posix()}')"
+        )
 
-    fraud = pd.read_parquet(
-        SILVER_DATA / "fraud_events.parquet"
-    )
+        con.execute(
+            "CREATE OR REPLACE VIEW fraud AS "
+            f"SELECT * FROM read_parquet('{(SILVER_DATA / 'fraud_events.parquet').as_posix()}')"
+        )
 
-    report = []
+        # Execute each validation query and combine its result.
+        script = SQL_FILE.read_text(encoding="utf-8")
+        statements = [
+            statement.strip()
+            for statement in script.split(";")
+            if statement.strip()
+            and not all(
+                line.strip().startswith("--") or not line.strip()
+                for line in statement.splitlines()
+            )
+        ]
 
-    report.append({
-        "Check": "Duplicate Seller IDs",
-        "Count": sellers.duplicated(
-            subset=["seller_id"]
-        ).sum()
-    })
+        results = []
 
-    report.append({
-        "Check": "Missing Revenue",
-        "Count": sellers["annual_revenue"].isna().sum()
-    })
+        for statement in statements:
+            result = con.execute(statement).fetchdf()
+            results.append(result)
 
-    report.append({
-        "Check": "Missing PAN Status",
-        "Count": verification["pan_status"].isna().sum()
-    })
+        quality_report = pd.concat(results, ignore_index=True)
 
-    report.append({
-        "Check": "Invalid Risk Score",
-        "Count": fraud[
-            (fraud["risk_score"] < 0) |
-            (fraud["risk_score"] > 100)
-        ].shape[0]
-    })
-
-    report.append({
-        "Check": "Negative Sales",
-        "Count": transactions[
-            transactions["sales"] < 0
-        ].shape[0]
-    })
-
-    quality_report = pd.DataFrame(report)
+    finally:
+        con.close()
 
     output = EXPORT_DIR / "quality_report.csv"
-
-    quality_report.to_csv(
-        output,
-        index=False
-    )
+    quality_report.to_csv(output, index=False)
 
     print("\nQuality Report")
     print("-" * 40)
