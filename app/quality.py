@@ -19,22 +19,22 @@ def generate_quality_report():
     try:
         # Register Silver Parquet files as temporary DuckDB views.
         con.execute(
-            "CREATE OR REPLACE VIEW sellers AS "
+            "CREATE OR REPLACE TEMP VIEW sellers AS "
             f"SELECT * FROM read_parquet('{(SILVER_DATA / 'sellers.parquet').as_posix()}')"
         )
 
         con.execute(
-            "CREATE OR REPLACE VIEW verification AS "
+            "CREATE OR REPLACE TEMP VIEW verification AS "
             f"SELECT * FROM read_parquet('{(SILVER_DATA / 'verification.parquet').as_posix()}')"
         )
 
         con.execute(
-            "CREATE OR REPLACE VIEW transactions AS "
+            "CREATE OR REPLACE TEMP VIEW transactions AS "
             f"SELECT * FROM read_parquet('{(SILVER_DATA / 'transactions.parquet').as_posix()}')"
         )
 
         con.execute(
-            "CREATE OR REPLACE VIEW fraud AS "
+            "CREATE OR REPLACE TEMP VIEW fraud AS "
             f"SELECT * FROM read_parquet('{(SILVER_DATA / 'fraud_events.parquet').as_posix()}')"
         )
 
