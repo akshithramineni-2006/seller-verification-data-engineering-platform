@@ -112,3 +112,92 @@ def test_complete_pipeline_runs_in_isolated_project(tmp_path):
 
     assert len(quality_report) == 5
     assert (quality_report["Count"] == 0).all()
+
+
+def test_run_stage_logs_success(monkeypatch, caplog):
+    import logging
+
+    from app import run_pipeline
+
+    def successful_subprocess(*args, **kwargs):
+        return subprocess.CompletedProcess(args[0], 0)
+
+    monkeypatch.setattr(
+        run_pipeline.subprocess,
+        "run",
+        successful_subprocess,
+    )
+
+    with caplog.at_level(logging.INFO, logger="pipeline"):
+        duration = run_pipeline.run_stage(
+            1,
+            6,
+            "TEST STAGE",
+            "app.test_module",
+        )
+
+    assert duration >= 0
+    assert "Stage 1/6 started: TEST STAGE" in caplog.text
+    assert "Stage 1/6 succeeded: TEST STAGE" in caplog.text
+
+
+def test_run_stage_logs_failure(monkeypatch, caplog):
+    import logging
+
+    from app import run_pipeline
+
+    def failed_subprocess(*args, **kwargs):
+        raise subprocess.CalledProcessError(
+            2,
+            args[0],
+        )
+
+    monkeypatch.setattr(
+        run_pipeline.subprocess,
+        "run",
+        failed_subprocess,
+    )
+
+    with caplog.at_level(logging.ERROR, logger="pipeline"):
+        try:
+            run_pipeline.run_stage(
+                2,
+                6,
+                "FAILING STAGE",
+                "app.test_module",
+            )
+        except subprocess.CalledProcessError as error:
+            assert error.returncode == 2
+        else:
+            raise AssertionError("Expected stage failure")
+
+    assert "Stage 2/6 failed: FAILING STAGE" in caplog.text
+    assert "exit_code=2" in caplog.text
+
+
+def test_main_stops_when_stage_fails(monkeypatch, caplog):
+    import logging
+
+    from app import run_pipeline
+
+    def fake_run_stage(index, total, name, module):
+        if index == 2:
+            raise subprocess.CalledProcessError(1, module)
+        return 0.5
+
+    monkeypatch.setattr(
+        run_pipeline,
+        "run_stage",
+        fake_run_stage,
+    )
+
+    with caplog.at_level(logging.ERROR, logger="pipeline"):
+        try:
+            run_pipeline.main()
+        except subprocess.CalledProcessError:
+            pass
+        else:
+            raise AssertionError("Expected pipeline failure")
+
+    assert "Pipeline failed" in caplog.text
+    assert "completed_stages=1/6" in caplog.text
