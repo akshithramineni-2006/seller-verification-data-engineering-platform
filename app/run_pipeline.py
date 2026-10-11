@@ -1,5 +1,4 @@
 
-import logging
 import subprocess
 import sys
 from datetime import datetime
@@ -24,10 +23,27 @@ def run_stage(index, total, name, module):
     start = perf_counter()
 
     try:
-        subprocess.run(
+        result = subprocess.run(
             [sys.executable, "-m", module],
-            check=True,
+            check=False,
+            capture_output=True,
+            text=True,
         )
+
+        # Preserve the stage's normal console output.
+        if result.stdout:
+            print(result.stdout, end="")
+
+        if result.stderr:
+            print(result.stderr, end="", file=sys.stderr)
+
+        if result.returncode != 0:
+            raise subprocess.CalledProcessError(
+                result.returncode,
+                result.args,
+                output=result.stdout,
+                stderr=result.stderr,
+            )
 
         elapsed = perf_counter() - start
 
@@ -59,6 +75,12 @@ def run_stage(index, total, name, module):
             error.returncode,
             elapsed,
         )
+
+        if error.stdout:
+            logger.error("Stage stdout:\n%s", error.stdout.strip())
+
+        if error.stderr:
+            logger.error("Stage stderr:\n%s", error.stderr.strip())
 
         raise
 

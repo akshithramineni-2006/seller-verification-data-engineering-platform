@@ -201,3 +201,42 @@ def test_main_stops_when_stage_fails(monkeypatch, caplog):
 
     assert "Pipeline failed" in caplog.text
     assert "completed_stages=1/6" in caplog.text
+
+
+def test_run_stage_logs_subprocess_stderr(monkeypatch, caplog):
+    import logging
+
+    from app import run_pipeline
+
+    error_message = "ModuleNotFoundError: simulated test failure"
+
+    def failed_subprocess(*args, **kwargs):
+        raise subprocess.CalledProcessError(
+            1,
+            args[0],
+            output="Simulated standard output",
+            stderr=error_message,
+        )
+
+    monkeypatch.setattr(
+        run_pipeline.subprocess,
+        "run",
+        failed_subprocess,
+    )
+
+    with caplog.at_level(logging.ERROR, logger="pipeline"):
+        try:
+            run_pipeline.run_stage(
+                3,
+                6,
+                "ERROR OUTPUT TEST",
+                "app.test_module",
+            )
+        except subprocess.CalledProcessError as error:
+            assert error.returncode == 1
+            assert error.stderr == error_message
+        else:
+            raise AssertionError("Expected stage failure")
+
+    assert error_message in caplog.text
+    assert "Simulated standard output" in caplog.text
