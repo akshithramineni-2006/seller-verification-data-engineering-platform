@@ -76,6 +76,8 @@ if __name__ == "__main__":
         ("Average Revenue by Industry", "industry_revenue.csv"),
         ("Verification Status", "verification_status.csv"),
         ("Country Verification Summary", "country_verification.csv"),
+        ("Risk Score Distribution", "risk_score_distribution.csv"),
+        ("Overall Risk Metrics", "overall_risk_metrics.csv"),
     ]
 
     for title, filename in exports:

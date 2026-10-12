@@ -130,3 +130,38 @@ ORDER BY
     dc.country_name,
     seller_count DESC;
 
+
+-- 10. Risk Score Distribution
+-- Output: risk_score_distribution.csv
+
+SELECT
+    CASE
+        WHEN r.risk_score BETWEEN 1 AND 20 THEN '1-20: Very Low'
+        WHEN r.risk_score BETWEEN 21 AND 40 THEN '21-40: Low'
+        WHEN r.risk_score BETWEEN 41 AND 60 THEN '41-60: Moderate'
+        WHEN r.risk_score BETWEEN 61 AND 80 THEN '61-80: High'
+        WHEN r.risk_score BETWEEN 81 AND 100 THEN '81-100: Very High'
+        ELSE 'Invalid / Unclassified'
+    END AS risk_band,
+    COUNT(*) AS seller_count
+FROM fact_seller f
+JOIN dim_risk r
+    ON f.risk_key = r.risk_key
+GROUP BY risk_band
+ORDER BY MIN(r.risk_score);
+
+
+-- 11. Overall Risk Metrics
+-- Output: overall_risk_metrics.csv
+
+SELECT
+    COUNT(*) AS total_sellers,
+    ROUND(AVG(r.risk_score), 2) AS average_risk_score,
+    MAX(r.risk_score) AS maximum_risk_score,
+    COUNT(*) FILTER (
+        WHERE r.risk_score >= 81
+    ) AS high_risk_sellers
+FROM fact_seller f
+JOIN dim_risk r
+    ON f.risk_key = r.risk_key;
+

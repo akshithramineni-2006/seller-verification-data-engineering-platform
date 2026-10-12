@@ -29,20 +29,27 @@ page_header(
 )
 
 risk_df = load_csv("high_risk_sellers.csv")
+risk_distribution_df = load_csv("risk_score_distribution.csv")
+overall_metrics_df = load_csv("overall_risk_metrics.csv")
 refund_df = load_csv("refund_rate.csv")
 business_df = load_csv("revenue_by_business.csv")
 
 require_data(
     ("High-risk sellers", risk_df),
+    ("Risk score distribution", risk_distribution_df),
+    ("Overall risk metrics", overall_metrics_df),
     ("Refund rates", refund_df),
     ("Revenue by business type", business_df),
 )
-
 # Validate the columns required by this page
 if "risk_score" not in risk_df.columns:
     st.error("The high-risk sellers export does not contain risk_score.")
     st.stop()
-
+if not {"risk_band", "seller_count"}.issubset(
+    risk_distribution_df.columns
+):
+    st.error("The risk distribution export is missing required columns.")
+    st.stop()
 if not {"business_type", "refund_percentage"}.issubset(refund_df.columns):
     st.error("The refund export is missing required columns.")
     st.stop()
@@ -67,11 +74,17 @@ business_df["total_sales"] = pd.to_numeric(
     business_df["total_sales"], errors="coerce"
 ).fillna(0)
 
-# Risk metrics
-risk_scores = risk_df["risk_score"].dropna()
-average_risk = float(risk_scores.mean()) if not risk_scores.empty else 0
-maximum_risk = float(risk_scores.max()) if not risk_scores.empty else 0
-high_risk_count = len(risk_df)
+
+# Overall risk metrics from the full seller warehouse
+if overall_metrics_df.empty:
+    st.error("The overall risk metrics export contains no data.")
+    st.stop()
+
+metrics = overall_metrics_df.iloc[0]
+
+average_risk = float(metrics["average_risk_score"])
+maximum_risk = float(metrics["maximum_risk_score"])
+high_risk_count = int(metrics["high_risk_sellers"])
 
 average_refund = (
     float(refund_df["refund_percentage"].mean())
@@ -82,10 +95,10 @@ average_refund = (
 kpis = st.columns(4)
 
 show_kpi(
-    kpis[0], "High-Risk Records", f"{high_risk_count:,}", CORAL
+    kpis[0], "High-Risk Sellers", f"{high_risk_count:,}", CORAL
 )
 show_kpi(
-    kpis[1], "Average Risk Score", f"{average_risk:.1f}", TAUPE
+    kpis[1], "Average Risk Score", f"{average_risk:.2f}", TAUPE
 )
 show_kpi(
     kpis[2], "Maximum Risk Score", f"{maximum_risk:.0f}", WALNUT
@@ -97,27 +110,57 @@ show_kpi(
 st.divider()
 
 # High-risk sellers
-st.subheader("Highest-Risk Sellers")
-st.caption("Ranked by risk score, highest first.")
 
-top_risk = risk_df.sort_values(
-    "risk_score", ascending=False
-).head(10)
+
+st.subheader("Risk Score Distribution")
+st.caption(
+    "Distribution across all sellers in the warehouse. "
+    "Higher scores indicate higher recorded risk."
+)
+
+risk_distribution_df = risk_distribution_df.copy()
+risk_distribution_df["seller_count"] = pd.to_numeric(
+    risk_distribution_df["seller_count"],
+    errors="coerce",
+).fillna(0)
 
 st.bar_chart(
-    top_risk,
-    x=top_risk.columns[0],
-    y="risk_score",
+    risk_distribution_df,
+    x="risk_band",
+    y="seller_count",
     color=CORAL,
-    horizontal=True,
 )
+
+st.dataframe(
+    risk_distribution_df.rename(
+        columns={
+            "risk_band": "Risk Band",
+            "seller_count": "Seller Count",
+        }
+    ),
+    width="stretch",
+    hide_index=True,
+)
+
+
+st.divider()
+
+st.subheader("Top 10 High-Risk Sellers")
+st.caption(
+    "Individual sellers ranked by risk score. "
+    "Tied scores are valid and do not imply a ranking difference."
+)
+
+top_risk = risk_df.sort_values(
+    ["risk_score", "seller_id"],
+    ascending=[False, True],
+).head(10)
 
 st.dataframe(
     top_risk,
     width="stretch",
     hide_index=True,
 )
-
 st.divider()
 
 # Refund rates

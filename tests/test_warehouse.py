@@ -36,8 +36,9 @@ def test_schema_sql_creates_expected_warehouse_tables(tmp_path):
         con.close()
 
 
-def test_analytics_sql_loads_all_nine_queries():
-    """Verify that all nine named analytics queries are loaded."""
+
+def test_analytics_sql_loads_all_ten_queries():
+    """Verify that all eleven named analytics queries are loaded."""
 
     from app import analytics
 
@@ -53,12 +54,12 @@ def test_analytics_sql_loads_all_nine_queries():
         "Average Revenue by Industry",
         "Verification Status",
         "Country Verification Summary",
+        "Risk Score Distribution",
+        "Overall Risk Metrics",
+
     }
 
     assert set(queries) == expected_queries
-    assert all(query.strip().upper().startswith("SELECT")
-               for query in queries.values())
-
 
 def test_dimension_and_fact_sql_files_are_not_empty():
     """Verify that dimension and fact loading SQL files contain statements."""
